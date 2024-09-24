@@ -1,0 +1,23 @@
+name: Main (manual)
+
+on:
+  workflow_dispatch:
+    # inputs:
+    #   name: ...
+
+jobs:
+  main:
+    name: Test
+    steps:
+    - name: Get source code locally
+      uses: actions/checkout@v4
+
+    - name: Test
+      shell: bash
+      run: |
+        # Find all docker-compose files matching the pattern
+        compose_files=$(find . -name 'docker-compose*.yml' -print0 | xargs -0 echo -f)
+
+        echo docker-compose $compose_files up -d
+        # Run docker-compose with the found files
+        # docker-compose $compose_files up -d

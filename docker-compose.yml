@@ -72,7 +72,9 @@ services:
 
 volumes:
   # certbot-etc:
-  wordpress: ./:/app
+  wordpress:
+    external: true
+    name: actual-name-of-volume
   dbdata:
 
 networks:
