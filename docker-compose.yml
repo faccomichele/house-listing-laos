@@ -1,50 +1,47 @@
 name: home-listing-laos
 
 services:
-  db:
-    image: mysql:8.0
-    container_name: db
-    restart: unless-stopped
-    env_file: ./.env
-    environment:
-      - MYSQL_DATABASE=wordpress
-    volumes:
-      - dbdata:/var/lib/mysql
-    command: '--default-authentication-plugin=mysql_native_password'
-    networks:
-      - app-network
+  # db:
+  #   image: mariadb:lts-ubi9
+  #   container_name: db
+  #   restart: unless-stopped
+  #   ports:
+  #   - "3306:3306"
+  #   env_file: .env
+  #   volumes:
+  #   - dbdata:/var/lib/mysql
+  #   networks:
+  #   - app-internal-network
 
   wordpress:
-    depends_on:
-      - db
-    image: wordpress:5.1.1-fpm-alpine
+    # depends_on:
+    # - db
+    image: wordpress:6.6.2-php8.3-fpm-alpine
     container_name: wordpress
     restart: unless-stopped
     env_file: .env
     environment:
-      - WORDPRESS_DB_HOST=db:3306
-      - WORDPRESS_DB_USER=$MYSQL_USER
-      - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
-      - WORDPRESS_DB_NAME=wordpress
+    - WORDPRESS_DB_HOST=db:3306
     volumes:
-      - wordpress:/var/www/html
+    - wordpress:/var/www/html
     networks:
-      - app-network
+    - app-internal-network
 
   webserver:
     depends_on:
-      - wordpress
-    image: nginx:1.15.12-alpine
+    - wordpress
+    image: nginx:1.27.1-alpine-slim
     container_name: webserver
     restart: unless-stopped
     ports:
-      - "80:80"
+    - "80:80"
     volumes:
-      - wordpress:/var/www/html
-      - ./wordpress/nginx-conf:/etc/nginx/conf.d
-      # - certbot-etc:/etc/letsencrypt
+    - wordpress:/var/www/html
+    - ./nginx-conf:/etc/nginx/conf.d
+    - certbot-etc:/etc/letsencrypt
     networks:
-      - app-network
+    - app-internal-network
+    # - host-network
     # deploy:
     #   restart_policy:
     #     condition: on-failure
@@ -60,23 +57,25 @@ services:
     #       memory: 20M
 
 
-  # certbot:
-  #   depends_on:
-  #     - webserver
-  #   image: certbot/certbot
-  #   container_name: certbot
-  #   volumes:
-  #     - certbot-etc:/etc/letsencrypt
-  #     - wordpress:/var/www/html
-  #   command: certonly --webroot --webroot-path=/var/www/html --email sammy@your_domain --agree-tos --no-eff-email --staging -d your_domain -d www.your_domain
+  certbot:
+    depends_on:
+      - webserver
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - wordpress:/var/www/html
+    command: certonly --webroot --webroot-path=/var/www/html --email faccomichele@gmail.com --agree-tos --no-eff-email --staging -d nubicu.eu -d localtest.nubicu.eu
 
 volumes:
-  # certbot-etc:
+  certbot-etc:
   wordpress:
-    external: true
-    name: actual-name-of-volume
-  dbdata:
+    # external: true
+    # name: actual-name-of-volume
+  # dbdata:
 
 networks:
-  app-network:
+  app-internal-network:
     driver: bridge
+  # host-network:
+  #   driver: host
